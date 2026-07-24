@@ -1,0 +1,117 @@
+name: Deploy Winform SaaS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  FRONTEND_DIR: frontend
+  BACKEND_DIR: backend
+
+jobs:
+  # Build and deploy frontend to Vercel
+  deploy-frontend:
+    name: Deploy Frontend to Vercel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend dependencies
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm install
+
+      - name: Build frontend
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm run build
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy to Vercel
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --confirm
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  # Deploy backend to Vercel
+  deploy-backend:
+    name: Deploy Backend to Vercel
+    runs-on: ubuntu-latest
+    needs: deploy-frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install backend dependencies
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: npm install
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy backend to Vercel
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: vercel --prod --token ${{ secrets.VERCEL_TOKEN }} --confirm
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
+
+  # Run database migrations on Supabase
+  deploy-database:
+    name: Run Database Migrations
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Supabase CLI
+        run: npm install -g supabase
+
+      - name: Run migrations
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
+          supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+  # Run seed script (optional)
+  seed-database:
+    name: Seed Database (Optional)
+    runs-on: ubuntu-latest
+    needs: deploy-database
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: npm install
+
+      - name: Run seed script
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: node scripts/seed-database.js
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

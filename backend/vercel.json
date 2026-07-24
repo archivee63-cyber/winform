@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/.*",
+      "dest": "index.js"
+    },
+    {
+      "src": "/(.*)",
+      "status": 404,
+      "dest": "index.js"
+    }
+  ],
+  "env": {
+    "SUPABASE_URL": "@supabase_url",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
+    "SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "JWT_SECRET": "@jwt_secret",
+    "OPENROUTER_API_KEY": "@openrouter_api_key",
+    "WHATSAPP_PHONE": "+22966895973",
+    "FRONTEND_URL": "https://winform.vercel.app"
+  }
+}
