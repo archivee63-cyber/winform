@@ -22,5 +22,9 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.3",
+    "framer-motion": "^12.42.2"
   }
 }
